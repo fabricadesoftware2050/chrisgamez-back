@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://api.christiangamez.com','http://localhost:3000','http://localhost:3001'],
+    'allowed_origins' => ['https://chrisgamez.com','http://localhost:3000','http://localhost:3001'],
 
     'allowed_origins_patterns' => [],
 
