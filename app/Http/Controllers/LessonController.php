@@ -38,7 +38,7 @@ class LessonController extends Controller
 
                 $url = $disk->temporaryUrl(
                     $modelo->url_video,   // ruta dentro del Space
-                    now()->addMinutes(30),    // tiempo válido
+                    now()->addMinutes(30),    // tiempo de expiración
                     [
                         'ResponseContentType' => 'video/mp4',
                         'ResponseContentDisposition' => 'inline',  // 👈 evita que se descargue
