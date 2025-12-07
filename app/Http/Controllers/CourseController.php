@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\UserCourse;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -14,6 +15,14 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         try {
+            if(auth()->check() && $request->has('userCourses')){
+                $user = auth()->user();
+                    if(auth()->check()){
+                        $user = auth()->user();
+                        $data = $user->courses()
+                        ->paginate(9);
+                    }
+            }else{
             $query = Course::query();
 
             // Apply filters if provided
@@ -34,7 +43,10 @@ class CourseController extends Controller
             // Paginate the results
             $data = $query->paginate(9);
 
-            return response()->json($data, 200)->header('X-Powered-By', 'AcademiaCristal API');
+        }
+
+            return response()->json($data
+                , 200)->header('X-Powered-By', 'AcademiaCristal API');
 
         } catch (Exception $ex) {
             return response()->json([
@@ -86,8 +98,16 @@ class CourseController extends Controller
      */
     public function show(string $id)
     {
+
         try {
             $modelo = Course::findOrFail($id);
+
+             if(auth()->check()){
+                $user = auth()->user();
+                $modelo->buyed = UserCourse::where('user_id', $user->id)
+                ->where('course_id', $id)
+                ->exists();
+            }
 
             return response()->json([
                 'message' => 'Operación exitosa',

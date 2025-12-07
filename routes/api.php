@@ -3,13 +3,16 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ComentarioController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LessonController;
+use App\Http\Controllers\PagoController;
 use App\Models\User;
 
 Route::group(['prefix' => 'v1'], function () {
  Route::group(['prefix' => 'auth'], function () {
     Route::post('login', [AuthController::class,'login']); // abierta
+    Route::post('register', [AuthController::class,'register']); // abierta
  });
 
     Route::group(['middleware' => 'auth:api'], function () {
@@ -28,8 +31,8 @@ Route::group(['prefix' => 'v1'], function () {
          Route::get('courses', [CourseController::class,'index']);
          Route::get('courses/{id}', [CourseController::class,'show']);
          Route::get('lessons/{id}/{courseId}', [LessonController::class,'show']);
-         Route::get('video/{id}/stream', [LessonController::class, 'stream'])
-    ->name('video.stream');
+         Route::apiResource('pagos', PagoController::class);
+        Route::apiResource('/comentarios', ComentarioController::class);
 
     });
 

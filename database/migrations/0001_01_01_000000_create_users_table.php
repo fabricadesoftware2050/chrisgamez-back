@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('role')->default('user');
             $table->string('login')->default('email');
+            $table->boolean('active')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });
@@ -45,6 +46,7 @@ return new class extends Migration
             'email' => 'admin@admin.com',
             'role' => 'admin',
             'login' => 'email',
+            'active' => true,
             'password' => bcrypt('1234'), // Cambia 'admin123' por la contraseña que desees
         ]);
 

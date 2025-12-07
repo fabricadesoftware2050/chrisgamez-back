@@ -15,6 +15,10 @@ class Course extends Model
         'contenido' => 'array'
     ];
 
-    
+    public function users()
+{
+    return $this->belongsToMany(User::class, 'user_courses');
+}
+
 }
 

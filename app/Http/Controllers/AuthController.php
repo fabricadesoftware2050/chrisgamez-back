@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Exception;
+use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -30,6 +31,8 @@ class AuthController extends Controller
         $user = User::where('email', $credentials['email'])->where('active', true)->first();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized','message' => 'Datos de acceso incorrectos o usuario inactivo'], 401);
+        }elseif ($user->role=='gmail'){
+            return response()->json(['error' => 'Unauthorized','message' => 'Su inicio de sesión es con Gmail'], 401);
         }
         $customClaims = [
             'role' => $user->role,
@@ -50,6 +53,75 @@ class AuthController extends Controller
             //throw $th;
         }
     }
+
+    public function register(Request $request)
+{
+    try {
+
+        // VALIDACIÓN
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string',
+        ]);
+        // BUSCAR USUARIO EXISTENTE
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+
+            // SI ES UN USUARIO QUE FUE REGISTRADO POR GOOGLE → LOGIN DIRECTO
+            if ($user->role === 'gmail') {
+
+                $customClaims = [
+                    'role'       => $user->role,
+                    'user_id'    => $user->id,
+                    'email'      => $user->email,
+                    'name'       => $user->name,
+                    'expires_in' => auth()->factory()->getTTL() * 60
+                ];
+
+                $token = auth()->claims($customClaims)->login($user);
+
+                return $this->respondWithToken($token);
+            }
+
+            // SI EXISTE PERO NO ES GOOGLE → ERROR
+            return response()->json([
+                'error' => 'Email in use',
+                'message' => 'El correo ya está registrado con método normal.'
+            ], 400);
+        }
+
+        // CREAR USUARIO
+        $user = User::create([
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'role'     => $validated['role'],   // Puedes modificarlo
+            'active'   => true,
+        ]);
+
+        // CUSTOM CLAIMS (mismos que login)
+        $customClaims = [
+            'role'       => $user->role,
+            'user_id'    => $user->id,
+            'email'      => $user->email,
+            'name'       => $user->name,
+            'expires_in' => auth()->factory()->getTTL() * 60
+        ];
+
+        // GENERAR TOKEN
+        $token = auth()->claims($customClaims)->login($user);
+
+        return $this->respondWithToken($token);
+
+    } catch (\Exception $ex) {
+        return response()->json([
+            'error' => 'Register failed',
+            'message' => $ex->getMessage()
+        ], 500);
+    }
+}
 
     /**
      * Get the authenticated User.

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\UserCourse;
 use Exception;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -33,6 +35,7 @@ class LessonController extends Controller
     {
         try {
             $modelo = Lesson::find($id);
+
             if($modelo && str_contains($modelo->url_video,'cursos' )){
                 $disk = Storage::disk('spaces');
 
@@ -58,8 +61,17 @@ class LessonController extends Controller
                     'message' => 'No se encontró el recurso solicitado'
                 ], 404);
             }else {
+
+
                 if($modelo->isFree || auth()->check()){
                     $modelo->course = $curso;
+                    $modelo->course['buyed'] = false;
+                    if(auth()->check()){
+                        $user = auth()->user();
+                        $modelo->course['buyed'] = UserCourse::where('user_id', $user->id)
+                        ->where('course_id', $request->courseId)
+                        ->exists();
+                    }
                     return response()->json([
                         'message' => 'Operación exitosa',
                         'data' => $modelo
