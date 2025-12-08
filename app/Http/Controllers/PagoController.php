@@ -13,6 +13,7 @@ class PagoController extends Controller
     public function store(Request $request)
     {
 
+        if(auth()->check()){
         $user = auth()->user();
 
             // Validar entrada
@@ -35,7 +36,7 @@ class PagoController extends Controller
             $validated['user_id'] = $user->id;
             $validated['course_id'] = intval($evento->course_id);
 
-            
+
 
             $validated['price'] = intval($evento->price) ;
             $validated['status'] = $evento->status;
@@ -71,7 +72,56 @@ class PagoController extends Controller
             'message' => 'Pago registrado con éxito',
             'pago' => $pago
         ], 201);
+    }else{
+         // Validar entrada
+
+            // Convertir datos entrantes a objeto
+            $evento = $request->all();
+        try {
+            // Asignar datos validados
+            $validated['detalle'] = json_encode($evento);
+            $validated['user_id'] = intval(explode("-", $evento['data']['transaction']['reference'])[1]);
+            $validated['course_id'] = intval(explode("-", $evento['data']['transaction']['reference'])[0]);
+
+
+
+            $validated['price'] = intval($evento['data']['transaction']['amount_in_cents'])/100 ;
+            $validated['status'] = $evento['data']['transaction']['status'];
+            $validated['id_transaction'] = $evento['data']['transaction']['id'];
+
+            // Crear registro de pago
+            $pago = Pago::create($validated);
+
+        if($validated['status']=="APPROVED"){
+            // Asociar usuario con curso
+            UserCourse::create([
+                'user_id' => $validated['user_id'],
+                'course_id' => $validated['course_id']
+            ]);
+        }
+
+        } catch (\Throwable $e) {
+
+
+            // Puedes registrar el error o devolver respuesta de error
+            \Log::error('Error al procesar evento de pago: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el pago',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+
+
+        return response()->json([
+            'message' => 'Pago registrado con éxito',
+            'pago' => $pago
+        ], 201);
+
     }
+}
 
     public function index()
     {
