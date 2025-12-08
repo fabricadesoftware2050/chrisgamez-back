@@ -91,7 +91,10 @@ class CourseController extends Controller
         $data = $query->paginate(9);
     }
 
-    return response()->json($data, 200)
+    return response()->json([
+        'message' => 'Operación exitosa',
+        'data' => $data
+    ], 200)
         ->header('X-Powered-By', 'AcademiaCristal API');
 
         } catch (\Throwable $e) {
