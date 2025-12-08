@@ -14,152 +14,99 @@ class CourseController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-{
-    try {
+    {
+        try {
 
-        if (auth()->check() && $request->has('userCourses')) {
+    if (auth()->check() && $request->has('userCourses')) {
 
-            $user = auth()->user();
+        $user = auth()->user();
 
-            // Obtener cursos del usuario
-            $data = $user->courses()->get();
+        // Obtener cursos SIN paginar
+        $data = $user->courses()->get();
 
-            // Lecciones vistas del usuario (más adelante obtendremos el detalle)
-            $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
-                ->pluck('leccion_id')
-                ->toArray();
+        // Lecciones vistas del usuario (solo una query)
+        $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
+            ->pluck('leccion_id')
+            ->toArray();
 
-            // También obtenemos el DETALLE completo para después filtrarlo por curso
-            $leccionesVistasDetalleGlobal = LeccionUsuario::where('user_id', $user->id)
-                ->get();
+        // Recorrer cursos (get() devuelve Collection, NO paginator)
+        foreach ($data as $curso) {
 
-            // ACUMULADORES GLOBALES
-            $totalMinutosVistos = 0;
-            $totalMinutosDisponibles = 0;
+    // Contenido puede venir como string (JSON) o como array
+    $contenido = is_string($curso->contenido)
+        ? json_decode($curso->contenido, true)
+        : $curso->contenido;
 
-            foreach ($data as $curso) {
-
-                // Asegurar que contenido sea array
-                $contenido = is_string($curso->contenido)
-                    ? json_decode($curso->contenido, true)
-                    : $curso->contenido;
-
-                if (!is_array($contenido)) {
-                    $curso->progreso = 0;
-                    $curso->horas_vistas = 0;
-                    continue;
-                }
-
-                $leccionesCurso = [];
-                $cursoMinutosTotales = 0;
-                $cursoMinutosVistos = 0;
-
-                // Recorrer módulos y lecciones
-                foreach ($contenido as $modulo) {
-
-                    if (!isset($modulo['lessons'])) continue;
-
-                    foreach ($modulo['lessons'] as $lesson) {
-
-                        $leccionId = $lesson['id'] ?? null;
-                        $duration = $lesson['duration'] ?? "0m";
-
-                        // Convertir duración a minutos
-                        $minutos = 0;
-
-                        if (preg_match('/(\d+)m/', $duration, $m)) {
-                            $minutos += intval($m[1]);
-                        }
-
-                        if (preg_match('/(\d+)h/', $duration, $h)) {
-                            $minutos += intval($h[1]) * 60;
-                        }
-
-                        // Sumar al tiempo total
-                        $cursoMinutosTotales += $minutos;
-
-                        // Si el usuario vio esta lección → sumar tiempo
-                        if (in_array($leccionId, $leccionesVistas)) {
-                            $cursoMinutosVistos += $minutos;
-                        }
-
-                        $leccionesCurso[] = $leccionId;
-                    }
-                }
-
-                // Guardar acumulados globales
-                $totalMinutosDisponibles += $cursoMinutosTotales;
-                $totalMinutosVistos += $cursoMinutosVistos;
-
-                // Progreso por curso
-                $curso->progreso = $cursoMinutosTotales > 0
-                    ? round(($cursoMinutosVistos / $cursoMinutosTotales) * 100)
-                    : 0;
-
-                // Campos adicionales
-                $curso->minutos_totales = $cursoMinutosTotales;
-                $curso->minutos_vistos = $cursoMinutosVistos;
-                $curso->horas_vistas = round($cursoMinutosVistos / 60, 2);
-
-                // IDs de lecciones vistas
-                $curso->lecciones_vistas = array_values(
-                    array_intersect($leccionesCurso, $leccionesVistas)
-                );
-
-                // DETALLE filtrado SOLO de las lecciones de este curso
-                $curso->lecciones_vistas_detalle = $leccionesVistasDetalleGlobal
-                    ->where('user_id', $user->id)
-                    ->whereIn('leccion_id', $curso->lecciones_vistas)
-                    ->values();
-            }
-
-            // AGREGAR DATOS GLOBALES
-            $data->total_horas_vistas = round($totalMinutosVistos / 60, 2);
-            $data->total_horas_totales = round($totalMinutosDisponibles / 60, 2);
-            $data->total_progreso_global = $totalMinutosDisponibles > 0
-                ? round(($totalMinutosVistos / $totalMinutosDisponibles) * 100)
-                : 0;
-
-        } else {
-
-            // Listado público paginado
-            $query = Course::query();
-
-            if ($request->has('query')) {
-
-                if ($request->filled('titulo')) {
-                    $query->where('titulo', 'like', '%' . trim($request->titulo) . '%');
-                }
-
-                if ($request->filled('categoria')) {
-                    $query->orWhere('categoria', 'like', '%' . trim($request->categoria) . '%');
-                }
-
-                if ($request->filled('nivel')) {
-                    $query->orWhere('nivel', 'like', '%' . trim($request->nivel) . '%');
-                }
-            }
-
-            $data = $query->paginate(9);
-        }
-
-        return response()->json([
-            'message' => 'Operación exitosa',
-            'data' => $data
-        ], 200)
-            ->header('X-Powered-By', 'AcademiaCristal API');
-
-
-    } catch (\Throwable $e) {
-
-        return response()->json([
-            'message' => 'Operación fallida',
-            'error' => $e->getMessage(),
-            'line' => $e->getLine()
-        ], 500);
+    if (!is_array($contenido)) {
+        $curso->progreso = 0;
+        continue;
     }
+
+    $leccionesCurso = [];
+
+    // Extraer TODAS las lecciones del JSON/Array
+    foreach ($contenido as $modulo) {
+        if (!isset($modulo['lessons'])) continue;
+
+        foreach ($modulo['lessons'] as $lesson) {
+            if (isset($lesson['id'])) {
+                $leccionesCurso[] = $lesson['id'];
+            }
+        }
+    }
+
+    // Contar vistas
+    $vistas = array_intersect($leccionesCurso, $leccionesVistas);
+
+    $total = count($leccionesCurso);
+    $curso->progreso = $total > 0
+        ? round((count($vistas) / $total) * 100)
+        : 0;
+
+    $curso->lecciones_vistas = $vistas;
 }
 
+
+    } else {
+
+        // Si NO es userCourses -> paginar cursos normales
+        $query = Course::query();
+
+        if ($request->has('query')) {
+
+            if ($request->filled('titulo')) {
+                $query->where('titulo', 'like', '%' . trim($request->titulo) . '%');
+            }
+
+            if ($request->filled('categoria')) {
+                $query->orWhere('categoria', 'like', '%' . trim($request->categoria) . '%');
+            }
+
+            if ($request->filled('nivel')) {
+                $query->orWhere('nivel', 'like', '%' . trim($request->nivel) . '%');
+            }
+        }
+
+        // paginator aquí SÍ tiene items()
+        $data = $query->paginate(9);
+    }
+
+    return response()->json([
+        'message' => 'Operación exitosa',
+        'data' => $data
+    ], 200)
+        ->header('X-Powered-By', 'AcademiaCristal API');
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'message' => 'Operación fallida',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+
+    }
 
     /**
      * Store a newly created resource in storage.
