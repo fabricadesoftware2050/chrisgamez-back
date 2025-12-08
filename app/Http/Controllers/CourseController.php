@@ -32,10 +32,7 @@ class CourseController extends Controller
         // Recorrer cursos (get() devuelve Collection, NO paginator)
         foreach ($data as $curso) {
 
-            $contenido = is_string($curso->contenido)
-    ? json_decode($curso->contenido, true)
-    : $curso->contenido; // ya es array
-
+            $contenido = json_decode($curso->contenido, true);
 
             if (!is_array($contenido)) {
                 $curso->progreso = 0;
@@ -91,13 +88,13 @@ class CourseController extends Controller
     return response()->json($data, 200)
         ->header('X-Powered-By', 'AcademiaCristal API');
 
-        } catch (\Throwable $e) {
+} catch (\Throwable $e) {
 
-            return response()->json([
-                'message' => 'Operación fallida',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    return response()->json([
+        'message' => 'Operación fallida',
+        'error' => $e->getMessage()
+    ], 500);
+}
 
 
     }
