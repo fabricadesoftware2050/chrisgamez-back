@@ -30,7 +30,7 @@ class CourseController extends Controller
                 ->toArray();
 
             // También obtenemos el DETALLE completo para después filtrarlo por curso
-            $leccionesVistasDetalleGlobal = LeccionUsuario::where('user_id', $user->id)->orderBy('updated_at','desc')
+            $leccionesVistasDetalleGlobal = LeccionUsuario::where('user_id', $user->id)
                 ->get();
 
             // ACUMULADORES GLOBALES
