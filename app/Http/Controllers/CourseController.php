@@ -32,7 +32,10 @@ class CourseController extends Controller
         // Recorrer cursos (get() devuelve Collection, NO paginator)
         foreach ($data as $curso) {
 
-            $contenido = json_decode($curso->contenido, true);
+            $contenido = is_string($curso->contenido)
+    ? json_decode($curso->contenido, true)
+    : $curso->contenido; // ya es array
+
 
             if (!is_array($contenido)) {
                 $curso->progreso = 0;
