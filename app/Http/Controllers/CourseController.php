@@ -109,7 +109,7 @@ class CourseController extends Controller
                 // DETALLE filtrado SOLO de las lecciones de este curso
                 $curso->lecciones_vistas_detalle = $leccionesVistasDetalleGlobal
                     ->where('course_id', $curso->id)
-                    ->whereIn('lesson_id', $curso->lecciones_vistas)
+                    ->whereIn('leccion_id', $curso->lecciones_vistas)
                     ->values();
             }
 
