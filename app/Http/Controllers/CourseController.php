@@ -16,77 +16,86 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         try {
-            if(auth()->check() && $request->has('userCourses')){
 
-            $user = auth()->user();
+    if (auth()->check() && $request->has('userCourses')) {
 
-            $data = $user->courses()->get();
+        $user = auth()->user();
 
-            // Lecciones vistas del usuario (solo una query)
-            $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
-                ->pluck('leccion_id')
-                ->toArray();
+        // Obtener cursos SIN paginar
+        $data = $user->courses()->get();
 
-            // Recorrer cada curso y calcular progreso
-            foreach ($data->items() as $curso) {
-                $contenido = json_decode($curso->contenido, true); // array
+        // Lecciones vistas del usuario (solo una query)
+        $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
+            ->pluck('leccion_id')
+            ->toArray();
 
-                $leccionesCurso = [];
+        // Recorrer cursos (get() devuelve Collection, NO paginator)
+        foreach ($data as $curso) {
 
-                // Extraer TODAS las lecciones del JSON de contenido
-                foreach ($contenido as $modulo) {
-                    foreach ($modulo['lessons'] as $lesson) {
-                        $leccionesCurso[] = $lesson['id'];
-                    }
-                }
+            $contenido = json_decode($curso->contenido, true);
 
-                // Contar cuántas están vistas
-                $vistas = array_intersect($leccionesCurso, $leccionesVistas);
-
-                // Calcular porcentaje
-                $total = count($leccionesCurso);
-                $vistasCount = count($vistas);
-
-                $curso->progreso = $total > 0
-                    ? round(($vistasCount / $total) * 100)
-                    : 0;
-
-                // Si quieres enviar también cuáles están vistas:
-                $curso->lecciones_vistas = $vistas;
+            if (!is_array($contenido)) {
+                $curso->progreso = 0;
+                continue;
             }
 
-            }else{
-            $query = Course::query();
+            $leccionesCurso = [];
 
-            // Apply filters if provided
-            if ($request->has('query')) {
-                if ($request->filled('titulo')) {
-                    $query->where('titulo', 'like', '%' . trim($request->input('titulo')) . '%');
-                }
-
-                if ($request->filled('categoria')) {
-                    $query->orWhere('categoria', 'like', '%' . trim($request->input('categoria')) . '%');
-                }
-
-                if ($request->filled('nivel')) {
-                    $query->orWhere('nivel', 'like', '%' . trim($request->input('nivel')) . '%');
+            // Extraer TODAS las lecciones del JSON
+            foreach ($contenido as $modulo) {
+                foreach ($modulo['lessons'] as $lesson) {
+                    $leccionesCurso[] = $lesson['id'];
                 }
             }
 
-            // Paginate the results
-            $data = $query->paginate(9);
+            // Cantidad de lecciones vistas
+            $vistas = array_intersect($leccionesCurso, $leccionesVistas);
 
+            // Calcular progreso
+            $total = count($leccionesCurso);
+            $curso->progreso = $total > 0
+                ? round((count($vistas) / $total) * 100)
+                : 0;
+
+            // Opcional: lista de lecciones vistas
+            $curso->lecciones_vistas = $vistas;
         }
 
-            return response()->json($data
-                , 200)->header('X-Powered-By', 'AcademiaCristal API');
+    } else {
 
-        } catch (Exception $ex) {
+        // Si NO es userCourses -> paginar cursos normales
+        $query = Course::query();
+
+        if ($request->has('query')) {
+
+            if ($request->filled('titulo')) {
+                $query->where('titulo', 'like', '%' . trim($request->titulo) . '%');
+            }
+
+            if ($request->filled('categoria')) {
+                $query->orWhere('categoria', 'like', '%' . trim($request->categoria) . '%');
+            }
+
+            if ($request->filled('nivel')) {
+                $query->orWhere('nivel', 'like', '%' . trim($request->nivel) . '%');
+            }
+        }
+
+        // paginator aquí SÍ tiene items()
+        $data = $query->paginate(9);
+    }
+
+    return response()->json($data, 200)
+        ->header('X-Powered-By', 'AcademiaCristal API');
+
+        } catch (\Throwable $e) {
+
             return response()->json([
                 'message' => 'Operación fallida',
-                'error' => $ex->getMessage()
-            ], 500)->header('X-Powered-By', 'AcademiaCristal API');
+                'error' => $e->getMessage()
+            ], 500);
         }
+
 
     }
 
