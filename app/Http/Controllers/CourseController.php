@@ -31,7 +31,7 @@ class CourseController extends Controller
 
             // También obtenemos el DETALLE completo para después filtrarlo por curso
             $leccionesVistasDetalleGlobal = LeccionUsuario::where('user_id', $user->id)
-                ->get(['leccion_id', 'updated_at']);
+                ->get();
 
             // ACUMULADORES GLOBALES
             $totalMinutosVistos = 0;
