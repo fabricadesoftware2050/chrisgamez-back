@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\LeccionUsuario;
 use App\Models\UserCourse;
 use Exception;
 use Illuminate\Http\Request;
@@ -16,12 +17,44 @@ class CourseController extends Controller
     {
         try {
             if(auth()->check() && $request->has('userCourses')){
-                $user = auth()->user();
-                    if(auth()->check()){
-                        $user = auth()->user();
-                        $data = $user->courses()
-                        ->paginate(9);
+
+            $user = auth()->user();
+
+            $data = $user->courses();
+
+            // Lecciones vistas del usuario (solo una query)
+            $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
+                ->pluck('leccion_id')
+                ->toArray();
+
+            // Recorrer cada curso y calcular progreso
+            foreach ($data as $curso) {
+                $contenido = json_decode($curso->contenido, true); // array
+
+                $leccionesCurso = [];
+
+                // Extraer TODAS las lecciones del JSON de contenido
+                foreach ($contenido as $modulo) {
+                    foreach ($modulo['lessons'] as $lesson) {
+                        $leccionesCurso[] = $lesson['id'];
                     }
+                }
+
+                // Contar cuántas están vistas
+                $vistas = array_intersect($leccionesCurso, $leccionesVistas);
+
+                // Calcular porcentaje
+                $total = count($leccionesCurso);
+                $vistasCount = count($vistas);
+
+                $curso->progreso = $total > 0
+                    ? round(($vistasCount / $total) * 100)
+                    : 0;
+
+                // Si quieres enviar también cuáles están vistas:
+                $curso->lecciones_vistas = $vistas;
+            }
+
             }else{
             $query = Course::query();
 

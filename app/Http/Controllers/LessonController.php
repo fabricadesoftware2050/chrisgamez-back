@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\LeccionUsuario;
 use App\Models\Lesson;
 use App\Models\UserCourse;
 use Exception;
@@ -71,6 +72,12 @@ class LessonController extends Controller
                         $modelo->course['buyed'] = UserCourse::where('user_id', $user->id)
                         ->where('course_id', $request->courseId)
                         ->exists();
+                        if($modelo->course['buyed']){
+                            LeccionUsuario::firstOrCreate([
+                                'user_id' => $user->id,
+                                'lesson_id' => $modelo->id,
+                            ]);
+                        }
                     }
                     return response()->json([
                         'message' => 'Operación exitosa',

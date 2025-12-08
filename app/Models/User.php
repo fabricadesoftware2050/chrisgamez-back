@@ -65,8 +65,13 @@ public function getJWTIdentifier()
     }
 
     public function courses()
-{
-    return $this->belongsToMany(Course::class, 'user_courses');
-}
+    {
+        return $this->belongsToMany(Course::class, 'user_courses');
+    }
+
+    public function lecciones()
+    {
+        return $this->belongsToMany(Lesson::class, 'lessons_users');
+    }
 
 }
