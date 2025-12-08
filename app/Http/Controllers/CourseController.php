@@ -24,47 +24,89 @@ class CourseController extends Controller
         // Obtener cursos SIN paginar
         $data = $user->courses()->get();
 
-        // Lecciones vistas del usuario (solo una query)
-        $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
-            ->pluck('leccion_id')
-            ->toArray();
+        // Lecciones vistas del usuario
+$leccionesVistas = LeccionUsuario::where('user_id', $user->id)
+    ->pluck('leccion_id')
+    ->toArray();
 
-        // Recorrer cursos (get() devuelve Collection, NO paginator)
-        foreach ($data as $curso) {
+// ACUMULADORES GLOBALES
+$totalMinutosVistos = 0;
+$totalMinutosDisponibles = 0;
 
-    // Contenido puede venir como string (JSON) o como array
+foreach ($data as $curso) {
+
+    // Asegurar que contenido sea array
     $contenido = is_string($curso->contenido)
         ? json_decode($curso->contenido, true)
         : $curso->contenido;
 
     if (!is_array($contenido)) {
         $curso->progreso = 0;
+        $curso->horas_vistas = 0;
         continue;
     }
 
     $leccionesCurso = [];
+    $cursoMinutosTotales = 0;
+    $cursoMinutosVistos = 0;
 
-    // Extraer TODAS las lecciones del JSON/Array
+    // Recorrer cada módulo y sus lecciones
     foreach ($contenido as $modulo) {
+
         if (!isset($modulo['lessons'])) continue;
 
         foreach ($modulo['lessons'] as $lesson) {
-            if (isset($lesson['id'])) {
-                $leccionesCurso[] = $lesson['id'];
+
+            $leccionId = $lesson['id'] ?? null;
+            $duration = $lesson['duration'] ?? "0m";
+
+            // Convertir duración a minutos
+            $minutos = 0;
+
+            // Formato "15m"
+            if (preg_match('/(\d+)m/', $duration, $m)) {
+                $minutos += intval($m[1]);
             }
+
+            // Formato "1h" o "1h 15m"
+            if (preg_match('/(\d+)h/', $duration, $h)) {
+                $minutos += intval($h[1]) * 60;
+            }
+
+            // Sumar a tiempo total del curso
+            $cursoMinutosTotales += $minutos;
+
+            // Si el usuario vio esta lección → sumar tiempo visto
+            if (in_array($lesson['id'], $leccionesVistas)) {
+                $cursoMinutosVistos += $minutos;
+            }
+
+            $leccionesCurso[] = $leccionId;
         }
     }
 
-    // Contar vistas
-    $vistas = array_intersect($leccionesCurso, $leccionesVistas);
+    // Guardar acumulado global
+    $totalMinutosDisponibles += $cursoMinutosTotales;
+    $totalMinutosVistos += $cursoMinutosVistos;
 
-    $total = count($leccionesCurso);
-    $curso->progreso = $total > 0
-        ? round((count($vistas) / $total) * 100)
+    // Asignar datos al curso
+    $curso->progreso = $cursoMinutosTotales > 0
+        ? round(($cursoMinutosVistos / $cursoMinutosTotales) * 100)
         : 0;
 
-    $curso->lecciones_vistas = $vistas;
+    $curso->minutos_totales = $cursoMinutosTotales;
+    $curso->minutos_vistos = $cursoMinutosVistos;
+    $curso->horas_vistas = round($cursoMinutosVistos / 60, 2);
 }
+
+// Agregar datos globales a la respuesta
+$data->total_horas_vistas = round($totalMinutosVistos / 60, 2);
+$data->total_horas_totales = round($totalMinutosDisponibles / 60, 2);
+$data->total_progreso_global = $totalMinutosDisponibles > 0
+    ? round(($totalMinutosVistos / $totalMinutosDisponibles) * 100)
+    : 0;
+
+
 
 
     } else {
