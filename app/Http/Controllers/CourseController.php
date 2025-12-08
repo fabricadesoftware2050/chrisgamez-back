@@ -20,7 +20,7 @@ class CourseController extends Controller
 
             $user = auth()->user();
 
-            $data = $user->courses();
+            $data = $user->courses()->get();
 
             // Lecciones vistas del usuario (solo una query)
             $leccionesVistas = LeccionUsuario::where('user_id', $user->id)
