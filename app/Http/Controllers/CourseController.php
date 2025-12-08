@@ -28,7 +28,7 @@ class CourseController extends Controller
                 ->toArray();
 
             // Recorrer cada curso y calcular progreso
-            foreach ($data as $curso) {
+            foreach ($data->items() as $curso) {
                 $contenido = json_decode($curso->contenido, true); // array
 
                 $leccionesCurso = [];
