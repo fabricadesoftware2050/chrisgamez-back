@@ -75,7 +75,7 @@ class LessonController extends Controller
                         if($modelo->course['buyed']){
                             LeccionUsuario::firstOrCreate([
                                 'user_id' => $user->id,
-                                'lesson_id' => $modelo->id,
+                                'leccion_id' => $modelo->id,
                             ]);
                         }
                     }
