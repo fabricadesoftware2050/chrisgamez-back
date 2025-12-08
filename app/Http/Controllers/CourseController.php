@@ -32,40 +32,37 @@ class CourseController extends Controller
         // Recorrer cursos (get() devuelve Collection, NO paginator)
         foreach ($data as $curso) {
 
-    // Contenido puede venir como string (JSON) o como array
-    $contenido = is_string($curso->contenido)
-        ? json_decode($curso->contenido, true)
-        : $curso->contenido;
+            $contenido = is_string($curso->contenido)
+    ? json_decode($curso->contenido, true)
+    : $curso->contenido; // ya es array
 
-    if (!is_array($contenido)) {
-        $curso->progreso = 0;
-        continue;
-    }
 
-    $leccionesCurso = [];
-
-    // Extraer TODAS las lecciones del JSON/Array
-    foreach ($contenido as $modulo) {
-        if (!isset($modulo['lessons'])) continue;
-
-        foreach ($modulo['lessons'] as $lesson) {
-            if (isset($lesson['id'])) {
-                $leccionesCurso[] = $lesson['id'];
+            if (!is_array($contenido)) {
+                $curso->progreso = 0;
+                continue;
             }
+
+            $leccionesCurso = [];
+
+            // Extraer TODAS las lecciones del JSON
+            foreach ($contenido as $modulo) {
+                foreach ($modulo['lessons'] as $lesson) {
+                    $leccionesCurso[] = $lesson['id'];
+                }
+            }
+
+            // Cantidad de lecciones vistas
+            $vistas = array_intersect($leccionesCurso, $leccionesVistas);
+
+            // Calcular progreso
+            $total = count($leccionesCurso);
+            $curso->progreso = $total > 0
+                ? round((count($vistas) / $total) * 100)
+                : 0;
+
+            // Opcional: lista de lecciones vistas
+            $curso->lecciones_vistas = $vistas;
         }
-    }
-
-    // Contar vistas
-    $vistas = array_intersect($leccionesCurso, $leccionesVistas);
-
-    $total = count($leccionesCurso);
-    $curso->progreso = $total > 0
-        ? round((count($vistas) / $total) * 100)
-        : 0;
-
-    $curso->lecciones_vistas = $vistas;
-}
-
 
     } else {
 
@@ -91,10 +88,7 @@ class CourseController extends Controller
         $data = $query->paginate(9);
     }
 
-    return response()->json([
-        'message' => 'Operación exitosa',
-        'data' => $data
-    ], 200)
+    return response()->json($data, 200)
         ->header('X-Powered-By', 'AcademiaCristal API');
 
         } catch (\Throwable $e) {
