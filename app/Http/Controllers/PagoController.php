@@ -43,6 +43,13 @@ class PagoController extends Controller
             $validated['id_transaction'] = $evento->id_transaction;
 
             // Crear registro de pago
+            $existentePago = Pago::where('user_id', $validated['user_id'])->where('course_id', $validated['course_id'])->first();
+            if($existentePago){
+                return response()->json([
+                    'message' => 'El pago ya ha sido registrado previamente',
+                    'pago' => $existentePago
+                ], 200);
+            }
             $pago = Pago::create($validated);
 
         if($validated['status']=="APPROVED"){
