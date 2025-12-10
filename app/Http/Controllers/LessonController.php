@@ -78,6 +78,98 @@ class LessonController extends Controller
                                 'leccion_id' => $modelo->id,
                             ]);
                         }
+
+                        $user = auth()->user();
+
+        // Obtener cursos SIN paginar
+        $data = $user->courses()->get();
+
+        // Lecciones vistas del usuario
+$leccionesVistas = LeccionUsuario::where('user_id', $user->id)
+    ->pluck('leccion_id')
+    ->toArray();
+
+// ACUMULADORES GLOBALES
+$totalMinutosVistos = 0;
+$totalMinutosDisponibles = 0;
+
+foreach ($data as $curso) {
+
+    // Asegurar que contenido sea array
+    $contenido = is_string($curso->contenido)
+        ? json_decode($curso->contenido, true)
+        : $curso->contenido;
+
+    if (!is_array($contenido)) {
+        $curso->progreso = 0;
+        $curso->horas_vistas = 0;
+        continue;
+    }
+
+    $leccionesCurso = [];
+    $cursoMinutosTotales = 0;
+    $cursoMinutosVistos = 0;
+
+    // Recorrer cada módulo y sus lecciones
+    foreach ($contenido as $modulo) {
+
+        if (!isset($modulo['lessons'])) continue;
+
+        foreach ($modulo['lessons'] as $lesson) {
+
+            $leccionId = $lesson['id'] ?? null;
+            $duration = $lesson['duration'] ?? "0m";
+
+            // Convertir duración a minutos
+            $minutos = 0;
+
+            // Formato "15m"
+            if (preg_match('/(\d+)m/', $duration, $m)) {
+                $minutos += intval($m[1]);
+            }
+
+            // Formato "1h" o "1h 15m"
+            if (preg_match('/(\d+)h/', $duration, $h)) {
+                $minutos += intval($h[1]) * 60;
+            }
+
+            // Sumar a tiempo total del curso
+            $cursoMinutosTotales += $minutos;
+
+            // Si el usuario vio esta lección → sumar tiempo visto
+            if (in_array($lesson['id'], $leccionesVistas)) {
+                $cursoMinutosVistos += $minutos;
+            }
+
+            $leccionesCurso[] = $leccionId;
+        }
+    }
+
+    // Guardar acumulado global
+    $totalMinutosDisponibles += $cursoMinutosTotales;
+    $totalMinutosVistos += $cursoMinutosVistos;
+
+    // Asignar datos al curso
+    $curso->progreso = $cursoMinutosTotales > 0
+        ? round(($cursoMinutosVistos / $cursoMinutosTotales) * 100)
+        : 0;
+
+    $curso->minutos_totales = $cursoMinutosTotales;
+    $curso->minutos_vistos = $cursoMinutosVistos;
+    $curso->horas_vistas = round($cursoMinutosVistos / 60, 2);
+}
+
+// Agregar datos globales a la respuesta
+$modelo->course->total_horas_vistas = round($totalMinutosVistos / 60, 2);
+$modelo->course->total_horas_totales = round($totalMinutosDisponibles / 60, 2);
+$modelo->course->total_progreso_global = $totalMinutosDisponibles > 0
+    ? round(($totalMinutosVistos / $totalMinutosDisponibles) * 100)
+    : 0;
+
+
+
+
+    
                     }
                     return response()->json([
                         'message' => 'Operación exitosa',
