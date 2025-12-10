@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('type')->default('video');
             $table->boolean('isFree')->default(false);
             $table->string('url_video')->nullable();
-            $table->text('content')->nullable();
+            $table->longText('content')->nullable();
             $table->text('description')->nullable();
             $table->string('url_download')->nullable();
             $table->timestamps();

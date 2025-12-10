@@ -52,7 +52,7 @@ class PagoController extends Controller
             }
             $pago = Pago::create($validated);
 
-        if($validated['status']=="APPROVED"){
+        if($validated['status']=="APPROVED" && !$existentePago){
             // Asociar usuario con curso
             UserCourse::create([
                 'user_id' => $validated['user_id'],
