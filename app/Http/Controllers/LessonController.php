@@ -150,13 +150,13 @@ foreach ($data as $curso) {
     $totalMinutosVistos += $cursoMinutosVistos;
 
     // Asignar datos al curso
-    $curso->progreso = $cursoMinutosTotales > 0
+    $modelo->course->progreso = $cursoMinutosTotales > 0
         ? round(($cursoMinutosVistos / $cursoMinutosTotales) * 100)
         : 0;
 
-    $curso->minutos_totales = $cursoMinutosTotales;
-    $curso->minutos_vistos = $cursoMinutosVistos;
-    $curso->horas_vistas = round($cursoMinutosVistos / 60, 2);
+    $modelo->course->minutos_totales = $cursoMinutosTotales;
+    $modelo->course->minutos_vistos = $cursoMinutosVistos;
+    $modelo->course->horas_vistas = round($cursoMinutosVistos / 60, 2);
 }
 
 // Agregar datos globales a la respuesta
@@ -169,7 +169,7 @@ $modelo->course->total_progreso_global = $totalMinutosDisponibles > 0
 
 
 
-    
+
                     }
                     return response()->json([
                         'message' => 'Operación exitosa',
