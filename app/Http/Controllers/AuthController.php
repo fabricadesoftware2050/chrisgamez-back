@@ -63,7 +63,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:120',
             'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:6',
-            //'role' => 'required|string',
+            'role' => 'required|string',
         ]);
         // BUSCAR USUARIO EXISTENTE
         $user = User::where('email', $request->email)->first();
