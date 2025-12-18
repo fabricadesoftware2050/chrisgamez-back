@@ -88,7 +88,7 @@ class AuthController extends Controller
             // SI EXISTE PERO NO ES GOOGLE → ERROR
             return response()->json([
                 'error' => 'Email in use',
-                'message' => 'El correo ya está registrado con método normal.'
+                'message' => 'Este correo debe iniciar sesión vía Gmail.'
             ], 400);
         }
 
