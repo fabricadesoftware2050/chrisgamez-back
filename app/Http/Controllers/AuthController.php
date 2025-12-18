@@ -63,7 +63,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:120',
             'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:6',
-            'role' => 'required|string',
+            //'role' => 'required|string',
         ]);
         // BUSCAR USUARIO EXISTENTE
         $user = User::where('email', $request->email)->first();
@@ -97,7 +97,7 @@ class AuthController extends Controller
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => bcrypt($validated['password']),
-            'role'     => $validated['role'],   // Puedes modificarlo
+            'role'     => $validated['role'] || 'user',   // Puedes modificarlo
             'active'   => true,
         ]);
 
