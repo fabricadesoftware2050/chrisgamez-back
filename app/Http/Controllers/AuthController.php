@@ -70,7 +70,7 @@ class AuthController extends Controller
         if ($user) {
 
             // SI ES UN USUARIO QUE FUE REGISTRADO POR GOOGLE → LOGIN DIRECTO
-            if ($user->role === 'gmail') {
+            if ($user->role === 'gmail' && $validated['role'] === 'gmail') {
 
                 $customClaims = [
                     'role'       => $user->role,
