@@ -36,6 +36,9 @@ class LessonController extends Controller
     {
         try {
             $modelo = Lesson::find($id);
+            $modelo->load([
+                'comments'
+            ]);
 
             if($modelo && str_contains($modelo->url_video,'cursos' )){
                 $disk = Storage::disk('spaces');

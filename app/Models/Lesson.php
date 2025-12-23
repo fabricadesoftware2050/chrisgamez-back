@@ -11,9 +11,11 @@ class Lesson extends Model
         'title', 'duration', 'type', 'isFree', 'url_video', 'content', 'description', 'url_download'
     ];
 
-    public function questions()
+
+    public function comments()
     {
-        return $this->hasMany(LessonQuestion::class);
+        return $this->hasMany(LessonQuestion::class)
+            ->orderBy('created_at', 'desc');
     }
 
 
