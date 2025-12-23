@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\LessonQuestion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Mews\Purifier\Facades\Purifier;
 
 
 class LessonQuestionController extends Controller
@@ -30,23 +31,40 @@ class LessonQuestionController extends Controller
             'content' => 'required|string',
         ]);
 
+
         $question = LessonQuestion::create([
             'lesson_id' => $lessonId,
             'title'     => $request->title,
-            'content'   => $request->content,
+            'content'   => Purifier::clean($request->content),
         ]);
         $modelo = Lesson::find($lessonId);
-        Mail::raw(
-            "Nuevo comentario en la lección:\n\n" .
-            "Lección: {$modelo->title}\n" .
-            "Usuario: " . auth()->user()->name . "\n\n" .
-            "Comentario:\n" .
-            $request->content . "\n\n" .
-            "Fecha: " . date('d/m/Y H:i'),
+        Mail::html(
+            "
+    <h2>📢 Nuevo comentario en la lección</h2>
+
+    <p><strong>Lección:</strong> {$modelo->title}</p>
+
+    <p>
+        <strong>Estudiante:</strong> " . auth()->user()->name . "<br>
+        <strong>Email:</strong> " . auth()->user()->email . "
+    </p>
+
+    <hr>
+
+    <p><strong>Comentario:</strong></p>
+
+    <div style='background:#f9fafb; padding:12px; border-left:4px solid #2563eb'>
+        {$request->content}
+    </div>
+
+    <p style='margin-top:20px; font-size:12px; color:#6b7280'>
+        Fecha: " . date('d/m/Y H:i') . "
+    </p>
+    ",
             function ($msg) {
                 $msg->to('info@chrisgamez.com')
-                ->cc(auth()->user()->email)
-                ->from('info@chrisgamez.com', 'CURSOS CHRIS GAMEZ')
+                    ->cc(auth()->user()->email)
+                    ->from('info@chrisgamez.com', 'CURSOS CHRIS GAMEZ')
                     ->subject('Nuevo comentario');
             }
         );
