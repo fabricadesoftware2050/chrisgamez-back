@@ -45,6 +45,8 @@ class LessonQuestionController extends Controller
             "Fecha: " . date('d/m/Y H:i'),
             function ($msg) {
                 $msg->to('info@chrisgamez.com')
+                ->cc(auth()->user()->email)
+                ->from('info@chrisgamez.com', 'CURSOS CHRIS GAMEZ')
                     ->subject('Nuevo comentario');
             }
         );
