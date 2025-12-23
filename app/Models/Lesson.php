@@ -10,4 +10,11 @@ class Lesson extends Model
     protected $fillable = [
         'title', 'duration', 'type', 'isFree', 'url_video', 'content', 'description', 'url_download'
     ];
+
+    public function questions()
+    {
+        return $this->hasMany(LessonQuestion::class);
+    }
+
+
 }

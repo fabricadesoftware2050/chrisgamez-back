@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\LessonQuestionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -25,6 +26,13 @@ Route::group(['prefix' => 'v1'], function () {
 
 
         Route::apiResource('courses', CourseController::class);
+
+
+
+        Route::post(
+            '/lessons/{lesson}/questions',
+            [LessonQuestionController::class, 'store']
+        );
     });
 
     Route::group(['prefix' => 'public'], function () {
@@ -32,8 +40,10 @@ Route::group(['prefix' => 'v1'], function () {
          Route::get('courses/{id}', [CourseController::class,'show']);
          Route::get('lessons/{id}/{courseId}', [LessonController::class,'show']);
          Route::apiResource('pagos', PagoController::class);
-        Route::apiResource('/comentarios', ComentarioController::class);
-
+         Route::get(
+            '/lessons/{lesson}/questions',
+            [LessonQuestionController::class, 'index']
+        );
     });
 
 
