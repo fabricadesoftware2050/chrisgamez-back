@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class LessonQuestionController extends Controller
 {
-        public function index($lessonId)
+        public function show($lessonId)
     {
             $questions = LessonQuestion::where('lesson_id', $lessonId)
                 ->orderBy('created_at', 'asc')

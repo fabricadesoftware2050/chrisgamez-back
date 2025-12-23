@@ -30,7 +30,7 @@ Route::group(['prefix' => 'v1'], function () {
 
 
         Route::post(
-            '/lessons/{lesson}/questions',
+            'questions/{lesson}',
             [LessonQuestionController::class, 'store']
         );
     });
@@ -42,7 +42,7 @@ Route::group(['prefix' => 'v1'], function () {
          Route::apiResource('pagos', PagoController::class);
          Route::get(
             'questions/{lesson}',
-            [LessonQuestionController::class, 'index']
+            [LessonQuestionController::class, 'show']
         );
     });
 
