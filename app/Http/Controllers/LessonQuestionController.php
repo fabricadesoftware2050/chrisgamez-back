@@ -41,7 +41,7 @@ class LessonQuestionController extends Controller
         $lessonUrl = $request->lesson_url;
         Mail::html(
             "
-    <h2>📢 Nuevo comentario en el curso</h2>
+    <h2>📢 Nuevo comentario en el curso - ID:{$question->id}</h2>
 
     <p><strong>Lección:</strong> {$modelo->title}</p>
     <p style='margin-top:20px'>
