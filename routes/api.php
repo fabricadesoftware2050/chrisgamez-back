@@ -41,7 +41,7 @@ Route::group(['prefix' => 'v1'], function () {
          Route::get('lessons/{id}/{courseId}', [LessonController::class,'show']);
          Route::apiResource('pagos', PagoController::class);
          Route::get(
-            '/lessons/{lesson}/questions',
+            'questions/{lesson}',
             [LessonQuestionController::class, 'index']
         );
     });
