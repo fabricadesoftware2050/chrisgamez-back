@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\LessonQuestionController;
+use App\Http\Controllers\LessonQuestionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
