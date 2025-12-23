@@ -38,11 +38,28 @@ class LessonQuestionController extends Controller
             'content'   => Purifier::clean($request->content),
         ]);
         $modelo = Lesson::find($lessonId);
+        $lessonUrl = $request->lesson_url;
         Mail::html(
             "
-    <h2>📢 Nuevo comentario en la lección</h2>
+    <h2>📢 Nuevo comentario en el curso {$request->title}</h2>
 
     <p><strong>Lección:</strong> {$modelo->title}</p>
+    <p style='margin-top:20px'>
+        <a href='{$lessonUrl}'
+           target='_blank'
+           rel='noopener noreferrer'
+           style='
+                display:inline-block;
+                padding:10px 16px;
+                background:#2563eb;
+                color:#ffffff;
+                text-decoration:none;
+                border-radius:6px;
+                font-weight:bold;
+           '>
+            Ver lección
+        </a>
+    </p>
 
     <p>
         <strong>Estudiante:</strong> " . auth()->user()->name . "<br>
